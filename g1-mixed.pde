@@ -171,23 +171,44 @@ void activateAnimationsForFragmentIndex(index) {
 
 class G1Region extends Box {
 
+    int outlineOffset = 1;
     String label;
-    Box contents;
+    Box contents, garbageContents;
     int occupiedColor;
+    int contentsAlpha = 255;
+    int garbageAlpha = 0;
+    double contentsAlphaCoefficient = 1/2;
     
     G1Region(x, y, sideLength, label, freeColor, occupiedColor, alpha) {
 	super(x, y, sideLength, sideLength, freeColor, alpha, true, #000000);
 
 	this.label = label;
 	this.occupiedColor = occupiedColor;
+	setOccupancy(0);
     }
 
     void setOccupancy(fillFactor) {
-	int maxHeight = height - 1;
+	int maxHeight = getContentMaxHeight();
 
 	children.clear();
 	contents = fitChild(new Box(0, ceil(maxHeight * (1 - fillFactor)),
-				    width, maxHeight * fillFactor, occupiedColor, alpha / 2));
+				    width, maxHeight * fillFactor, occupiedColor, contentsAlpha * contentsAlphaCoefficient));
+	garbageContents = fitChild(new Box(0, ceil(maxHeight * (1 - fillFactor)),
+					   width, maxHeight * fillFactor, occupiedColor, garbageAlpha * contentsAlphaCoefficient));
+    }
+
+    double getOccupancy() {
+    	return contents.height / getContentMaxHeight();
+    }
+
+    void setContentsAlpha(alpha) {
+	contents.alpha = alpha * contentsAlphaCoefficient;
+	contentsAlpha = alpha;
+    }
+
+    void setGarbageAlpha(alpha) {
+	garbageContents.alpha = alpha * contentsAlphaCoefficient;
+	garbageAlpha = alpha;
     }
     
     void drawShape() {
@@ -195,11 +216,18 @@ class G1Region extends Box {
 	drawLabel();
     }
 
+    private int getContentMaxHeight() {
+    	return height - outlineOffset;
+    }
+
     private void drawLabel() {
-	fill(#000000);
+	fill(#000000, contentsAlpha);
 	textAlign(CENTER, CENTER);
 	textFont(font, width * 1/2);
 	text(label, x, y, width, height);
+
+	fill(#000000, garbageAlpha);
+	text("X", x, y, width, height);
     }
 }
 
@@ -236,7 +264,7 @@ class G1Heap {
     }
 
     void getRegion(x, y) {
-	return regions.get(y * regionsHigh + x);
+	return regions.get(y * regionsWide + x);
     }
 
     void updateRegionLabels() {
@@ -253,17 +281,16 @@ class G1Heap {
 
 ArrayList drawables = new ArrayList();
 ArrayList animations = new ArrayList();
-ArrayList firstFragmentAnima = new ArrayList();
-ArrayList secondFragmentAnima = new ArrayList();
-ArrayList thirdFragmentAnima = new ArrayList();
-ArrayList forthFragmentAnima = new ArrayList();
+ArrayList firstFragmentAnimations = new ArrayList();
+ArrayList secondFragmentAnimations = new ArrayList();
+ArrayList thirdFragmentAnimations = new ArrayList();
 Font font = loadFont("FFScala.ttf");
 
 int rate = 20;
 
 int regionsWide = 13;
 int regionsHigh = 3;
-int regionSideLength = 20;
+int regionSideLength = 25;
 int spacing = 3;
 
 int heapHeight = regionsHigh * regionSideLength + (regionsHigh - 1) * spacing;
@@ -307,11 +334,20 @@ void setup() {
     heapContainer = new Box(heapOffsetX, heapOffsetY, heapSize, heapHeight, heapColor, 255 / 2, false, #000000);
     drawables.add(heapContainer);
 
-    g1Heap = new G1Heap(13, 3, 20, freeHeapColor, occupiedHeapColor, heapContainer, 3);
-    g1Heap.updateRegionLabels("E", "", "S", "", "", "", "O", "", "E", "", "", "O", "",
-			"", "O", "E", "", "O", "", "O", "O", "O", "E", "", "", "",
-			"", "S", "", "", "", "O", "", "", "O", "", "", "O", "");
-    
+    g1Heap = new G1Heap(regionsWide, regionsHigh, regionSideLength, freeHeapColor, occupiedHeapColor, heapContainer, 3);
+    g1Heap.updateRegionLabels("", "", "E", "", "S", "O", "X", "", "", "", "", "O", "",
+			"O", "O", "", "", "X", "", "X", "O", "O", "", "", "", "X",
+			"O", "X", "O", "O", "", "O", "", "", "O", "", "O", "O", "");
+    for(int i=0; i < g1Heap.regions.size(); i++) {
+	if (g1Heap.regions.get(i).label !== "") {
+	    if (i >= regionsWide || g1Heap.regions.get(i).label === "X") {
+		g1Heap.regions.get(i).setOccupancy(1.0);
+	    } else {
+		g1Heap.regions.get(i).setOccupancy(0.9);
+	    }
+	}
+    }
+        
     addAnimations();
 
     if (!isInPresentation()) {
@@ -323,42 +359,60 @@ void setup() {
 
 void addAnimations() {
 
-/*
-    var eden = generationalHeap.edenContents;
-    var survivor1 = generationalHeap.survivor1Contents;
-    var survivor2 = generationalHeap.survivor2Contents;
-    var old = generationalHeap.oldContents;
-    var changeWidthFunction = function(value) {this.width = value};
+    int waitCleanDuration = isInPresentation() ? 0 : 1000;
+    int cleanDuration = 2000;
+    var changeInteriorAlphaFunction = function(alpha) { this.setContentsAlpha(alpha); };
+    for (int i = 0; i < g1Heap.regions.size(); i++) {
+	G1Region currentRegion = g1Heap.regions.get(i);
+	if (currentRegion.label === "E") {
+	    secondFragmentAnimations.add(addInactiveAnimation(currentRegion, changeInteriorAlphaFunction,
+							      currentRegion.contentsAlpha, 0,
+							      cleanDuration, waitCleanDuration));
+	}
+    }
+    for (int i = 0; i < g1Heap.regions.size(); i++) {
+	G1Region currentRegion = g1Heap.regions.get(i);
+	if (currentRegion.label === "S") {
+	    secondFragmentAnimations.add(addInactiveAnimation(currentRegion, changeInteriorAlphaFunction,
+							      currentRegion.contentsAlpha, 0,
+							      cleanDuration, waitCleanDuration));
+	}
+    }
+    G1Region newSurvivorRegion = g1Heap.getRegion(4, 2);
+    var setupNewSurviorRegionFunction = function() {newSurvivorRegion.contentsAlpha = 0; newSurvivorRegion.label = "S"; newSurvivorRegion.setOccupancy(0.6);}
+    secondFragmentAnimations.add(addInactiveAnimation(newSurvivorRegion, setupNewSurviorRegionFunction,
+						    0, 1, 0, waitCleanDuration));
+    secondFragmentAnimations.add(addInactiveAnimation(newSurvivorRegion, changeInteriorAlphaFunction,
+ 						     0, 255,
+						     cleanDuration, waitCleanDuration));
+
+    int waitRemoveMarkedDuration = isInPresentation() ? 0 : waitCleanDuration + cleanDuration + 1000;
+    int removeMarkedDuration = 2000;
+    ArrayList markedRegions = new ArrayList();
+    markedRegions.add(g1Heap.getRegion(8,2));
+    var changeOccupancyFunction = function(occupancy) { this.setOccupancy(occupancy); };
+    for (int i = 0; i < markedRegions.size(); i++) {
+	G1Region currentRegion = markedRegions.get(i);
+	thirdFragmentAnimations.add(addInactiveAnimation(currentRegion, function (value) {this.setGarbageAlpha(value);},
+							 255, 0,
+							 removeMarkedDuration /2, waitRemoveMarkedDuration));
+	
+	thirdFragmentAnimations.add(addInactiveAnimation(currentRegion, changeInteriorAlphaFunction,
+							 0, 255,
+							 removeMarkedDuration, waitRemoveMarkedDuration));
+	thirdFragmentAnimations.add(addInactiveAnimation(currentRegion, changeOccupancyFunction,
+							 currentRegion.getOccupancy(), 0.75,
+							 removeMarkedDuration, waitRemoveMarkedDuration));    
+    }
+
+    thirdFragmentAnimations.add(addInactiveAnimation(g1Heap.getRegion(4,1), changeInteriorAlphaFunction,
+ 						     255, 0,
+						     removeMarkedDuration, waitRemoveMarkedDuration));
+
     
-    int waitEdenFillDuration = 0;
-    int edenFillDuration = 2000;
-    int edenAfterFirstAnimaWidth = survivor2.width / 2;
-    firstFragmentAnimations.add(addInactiveAnimation(eden, changeWidthFunction,  eden.width, generationalHeap.eden.width - 1, edenFillDuration,  waitEdenFillDuration));
-    
-    int waitEdenCleanDuration = isInPresentation() ? 0 : waitEdenFillDuration + edenFillDuration + 1000;
-    int edenCleanDuration = 2000;
-    int edenAfterSecondAnimaWidth = survivor2.width / 2;
-    secondFragmentAnimations.add(addInactiveAnimation(eden, changeWidthFunction, generationalHeap.eden.width - 1, edenAfterSecondAnimaWidth, edenCleanDuration, waitEdenCleanDuration));
-    
-    int waitEdenToSurvivorCleanDuration = isInPresentation() ? 0 : waitEdenCleanDuration + edenCleanDuration + 1000;
-    int edenToSurvivorCleanDuration = 1000;
-    int survivor1AfterThirdAnimaWidth = survivor2.width / 2;
-    thirdFragmentAnimations.add(addInactiveAnimation(eden, changeWidthFunction, edenAfterSecondAnimaWidth, 0, edenToSurvivorCleanDuration, waitEdenToSurvivorCleanDuration));
-    thirdFragmentAnimations.add(addInactiveAnimation(survivor1, changeWidthFunction, 0, survivor1AfterThirdAnimaWidth, edenToSurvivorCleanDuration, waitEdenToSurvivorCleanDuration));
-    
-    
-    int waitSurvivorCleanDuration = isInPresentation() ? 0 : waitEdenToSurvivorCleanDuration + edenToSurvivorCleanDuration + 1000;
-    int survivorCleanDuration = 1000;
-    forthFragmentAnimations.add(addInactiveAnimation(survivor1, changeWidthFunction, survivor1AfterThirdAnimaWidth, generationalHeap.survivor1.width * 2/3, survivorCleanDuration, waitSurvivorCleanDuration));
-    forthFragmentAnimations.add(addInactiveAnimation(survivor2, changeWidthFunction, survivor2.width, 0, survivorCleanDuration, waitSurvivorCleanDuration));
-    forthFragmentAnimations.add(addInactiveAnimation(old, changeWidthFunction, old.width, old.width + survivor2.width / 3, survivorCleanDuration, waitSurvivorCleanDuration));
-    
-    fragmentAnimations.add(firstFragmentAnimations);
     fragmentAnimations.add(new ArrayList());
     fragmentAnimations.add(secondFragmentAnimations);
     fragmentAnimations.add(thirdFragmentAnimations);
-    fragmentAnimations.add(forthFragmentAnimations);
-*/
 }
 
 void draw() {
