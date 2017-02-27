@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title></title>
+<meta name="author" content="(remigius)"/>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="./reveal.js/css/reveal.css"/>
+
+<link rel="stylesheet" href="./reveal.js/css/theme/league.css" id="theme"/>
+
+
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = './reveal.js/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+<style type="text/css">.playback { display:none; }</style>
+<script src="processing.min.js"></script>
+<script type="text/javascript">/*Processing.disableInit();*/</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section>
+<section id="slide-orgebdb2d4" data-autoslide="6666">
+<h2 id="orgebdb2d4">Garbage Collection in the HotSpot JVM 1.8</h2>
+<p class="fragment appear">
+HotSpot Java Virtual Machine (JVM) only
+</p>
+<p class="fragment appear">
+Focus on version 1.8
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org1da2ad7" data-autoslide="5000">
+<h2 id="org1da2ad7">Motivation &amp; Goal</h2>
+<p class="fragment appear">
+Manage object lifecycle automatically
+</p>
+<p class="fragment appear">
+Free as much memory as fast as possible
+</p>
+<p class="fragment appear">
+Unused object detection is non-trivial
+</p>
+</section>
+<section id="slide-org0610578" data-state="mainjob" data-autoslide="5000">
+<h3 id="org0610578">Main Job</h3>
+<canvas id="mainjob-canvas"></canvas>
+<p class="fragment appear">
+Scan for unused objects
+</p>
+<p class="fragment appear">
+Remove them from memory
+</p>
+<p class="fragment appear">
+Compact the memory in use
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org8113c6d" data-autoslide="5000">
+<h2 id="org8113c6d">Preliminary Concepts</h2>
+<p class="fragment appear">
+<code>Heap</code> is the part of the memory processed by the garbage collector
+</p>
+<p class="fragment appear">
+<code>Stop-the-world pauses</code> freeze the application from a user's perspective
+</p>
+<p class="fragment appear">
+Many objects are short-lived, eg. created in a loop
+</p>
+</section>
+<section id="slide-orgf0086dd" data-autoslide="4000">
+<h3 id="orgf0086dd">Client and Server class</h3>
+<p class="fragment appear">
+JVM automatically classifies machine als <code>client</code> or <code>server</code>
+</p>
+<p class="fragment appear">
+May be overridden with command line flags
+</p>
+<p class="fragment appear">
+32-Bit JVM with single core or on Windows leads to <code>client</code>
+</p>
+<p class="fragment appear">
+Everything else, esp. all 64-Bit JVMs, lead to <code>server</code>   
+</p>
+</section>
+<section id="slide-org61d67aa" data-state="generational" data-autoslide="3333">
+<h3 id="org61d67aa">Generational Heap</h3>
+<canvas id="generational-canvas"></canvas>
+<p class="fragment appear">
+All garbage collectors split the heap into generations
+</p>
+<p class="fragment appear">
+Young generation where objects are created
+</p>
+<p class="fragment appear">
+Further divided into Eden space
+</p>
+<p class="fragment appear">
+And two survivor spaces
+</p>
+<p class="fragment appear">
+Objects are basically promoted from one generation to next 
+</p>
+</section>
+<section id="slide-org68a61d4" data-autoslide="4000">
+<h3 id="org68a61d4">Generational Heap - Benefits</h3>
+<p class="fragment appear">
+Allows different algorithms for young and old generation
+</p>
+<p class="fragment appear">
+Faster to scan young generation
+</p>
+<p class="fragment appear">
+Young collections copy and therefore compact automatically
+</p>
+<p class="fragment appear">
+Shorter stop-the-world pauses
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgbb98747" data-autoslide="4000">
+<h2 id="orgbb98747">Algorithms</h2>
+<p>
+Serial Garbage Collector - Single-threaded
+</p>
+<p class="fragment appear">
+Throughput Collector - Multi-threaded
+</p>
+<p class="fragment appear">
+Concurrent Mark and Sweep (CMS) Collector - Minimizes pauses
+</p>
+<p class="fragment appear">
+Garbage First (G1) Collector - Minimizes pauses with large heaps
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org27b6d73" data-autoslide="4000">
+<h2 id="org27b6d73">Serial Garbage Collector</h2>
+<p class="fragment appear">
+Default for <code>client class</code> machines
+</p>
+<p class="fragment appear">
+Single-threaded collection of new and old generation
+</p>
+<p class="fragment appear">
+Stop-the-world pauses for both collections
+</p>
+<p class="fragment appear">
+Compacts the old generation on collection
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgb4290ff" data-autoslide="2871">
+<h2 id="orgb4290ff">Througput Collector</h2>
+<p class="fragment appear">
+Default for <code>server class</code> machines
+</p>
+<p class="fragment appear">
+Optimizes for throughput
+</p>
+<p class="fragment appear">
+Collects young generation multi-threaded
+</p>
+<p class="fragment appear">
+Old GC multi-threading default since JDK 7u4
+</p>
+<ul><li style="list-style-type: none;" class="fragment appear">Two operations:</li>
+<li class="fragment appear">Minor collection</li>
+<li class="fragment appear">Full collection</li>
+</section>
+<section id="slide-org7bb2258" data-state="throughput-minor" data-autoslide="3333">
+<h3 id="org7bb2258">Throughput - Minor Garbage Collection</h3>
+<canvas id="throughput-minor-canvas"></canvas>
+<p class="fragment appear">
+Occurs when <code>eden space</code> occupancy exceeds threshold
+</p>
+<p class="fragment appear">
+Moves everything out of <code>eden space</code>
+</p>
+<p class="fragment appear">
+Most of the objects are garbage and can be removed
+</p>
+<p class="fragment appear">
+Some are moved to the <code>survivor space</code>
+</p>
+<p class="fragment appear">
+Other survivor space is cleared as well, some promotions to <code>old</code>
+</p>
+</section>
+<section id="slide-org0cf4b3a" data-state="throughput-major" data-autoslide="4000">
+<h3 id="org0cf4b3a">Throughput - Major Garbage Collection</h3>
+<canvas id="throughput-major-canvas"></canvas>
+<p class="fragment appear">
+Occurs when <code>old generation</code> occupancy exceeds threshold
+</p>
+<p class="fragment appear">
+Cleans everything out of <code>eden space</code>
+</p>
+<p class="fragment appear">
+Cleans everything out of active <code>survivor space</code>
+</p>
+<p class="fragment appear">
+Cleans everything out of <code>old generation</code> without active references
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org3a894f4" data-autoslide="2857">
+<h2 id="org3a894f4">Concurrent Mark and Sweep Collector</h2>
+<aside class="notes">
+<p>
+END: Mention full GC will be skipped from now on as basically identical in all collectors
+</p>
+
+</aside>
+<p class="fragment appear">
+Tries to eliminate long pauses during full GC
+</p>
+<ul><li style="list-style-type: none;" class="fragment appear">Three operations:</li>
+<li class="fragment appear">Young collection</li>
+<li class="fragment appear">Concurrent cycle</li>
+<li class="fragment appear">Full collection</li></ul>
+<p class="fragment appear">
+Young and full GC analoguous to <code>Throughput Collector</code>
+</p>
+</section>
+<section id="slide-orgce3859a" data-state="cms-concurrent" data-autoslide="5000">
+<h3 id="orgce3859a">CMS - Concurrent Cycle</h3>
+<canvas id="cms-concurrent-canvas"></canvas>
+<p class="fragment appear">
+JVM starts a concurrent cycle when heap sufficiently full
+</p>
+<p class="fragment appear">
+Consists of multiple phases, two of them are <code>stop-the-world</code>
+</p>
+<p class="fragment appear">
+<code>Old generation</code> is not compacted
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org647a3a1" data-autoslide="2222">
+<h2 id="org647a3a1">Garbage First (G1) Collector</h2>
+<p class="fragment appear">
+Minimizes pauses for large heaps (&gt;4GiB)
+</p>
+<p class="fragment appear">
+Divides heap into regions but still generational
+</p>
+<p class="fragment appear">
+Copying in old generation leads to less fragmentation
+</p>
+<ul><li style="list-style-type: none;" class="fragment appear">Four operations:</li>
+<li class="fragment appear">Young collection</li>
+<li class="fragment appear">Background, concurrent cycle</li>
+<li class="fragment appear">Mixed collection</li>
+<li class="fragment appear">Full collection</li></ul>
+</section>
+<section id="slide-orgaf733b1" data-state="g1-minor" data-autoslide="5000">
+<h3 id="orgaf733b1">G1 - Young Collection</h3>
+<canvas id="g1-minor-canvas"></canvas>
+<p class="fragment appear">
+<code>G1 young collection</code> triggered when eden regions fill up
+</p>
+<p class="fragment appear">
+After collection there are no regions assigned to <code>eden</code>
+</p>
+<p class="fragment appear">
+and at least one region assigned to <code>survivor</code>
+</p>
+</section>
+<section id="slide-orgc46a015" data-state="g1-marking" data-autoslide="4000">
+<h3 id="orgc46a015">G1 - Marking Cycle</h3>
+<canvas id="g1-marking-canvas"></canvas>
+<p class="fragment appear">
+Several phases, some of them <code>stop-the-world</code>
+</p>
+<p class="fragment appear">
+At least one young collection during marking cycle
+</p>
+<p class="fragment appear">
+Old regions containing mostly garbage
+</p>
+<p class="fragment appear">
+Old regions more occupied after marking due to young GC
+</p>
+</section>
+<section id="slide-org693ed89" data-state="g1-mixed" data-autoslide="5000">
+<h3 id="org693ed89">G1 - Mixed Collection</h3>
+<canvas id="g1-mixed-canvas"></canvas>
+<p class="fragment appear">
+Uses input of marking cycle
+</p>
+<p class="fragment appear">
+Combine young collection with collection of marked regions
+</p>
+<p class="fragment appear">
+Non-garbage of marked regions moved to other regions
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org8bbbb0d" data-autoslide="5000">
+<h2 id="org8bbbb0d">Summary</h2>
+<p class="fragment appear">
+Throughput collector (and basically Serial too) maximize throughput
+</p>
+<p class="fragment appear">
+Concurrent collectors (CMS &amp; G1) minimize pauses
+</p>
+<p class="fragment appear">
+Skipped <code>Incremental CMS</code>, deprecated since JVM 1.8
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgd76d182" data-background="./media/would_you_like_to_know_more.jpg" data-autoslide="2000">
+<h2 id="orgd76d182"></h2>
+<img src="media/java_performance_the_definitive_guide_cover.jpeg" height="200px">
+</section>
+</section>
+</div>
+</div>
+<script src="./reveal.js/lib/js/head.min.js"></script>
+<script src="./reveal.js/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: false,
+progress: false,
+history: false,
+center: true,
+slideNumber: false,
+rollingLinks: false,
+keyboard: true,
+overview: false,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'slide', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'default',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+{ src: 'processingutils.js' }, { src: 'processing-animation-initialisations.js'},
+ { src: './reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+ { src: './reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: './reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: './reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+ { src: './reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+,autoSlide: 2000, overview: true,});
+</script>
+</body>
+</html>
