@@ -1,0 +1,239 @@
+#+OPTIONS: num:nil reveal_slide_number:nil reveal_title_slide:nil reveal_control:nil reveal_overview:nil reveal_progress:nil reveal_overview:nil
+#+REVEAL_INIT_SCRIPT: autoSlide: 2000, overview: true,
+#+REVEAL_DEFAULT_FRAG_STYLE: appear
+#+REVEAL_THEME: league
+#+REVEAL_TRANS: slide
+#+REVEAL_HEAD_PREAMBLE: <style type="text/css">.playback { display:none; }</style>
+#+REVEAL_HEAD_PREAMBLE: <script src="processing.min.js"></script>
+#+REVEAL_HEAD_PREAMBLE: <script type="text/javascript">/*Processing.disableInit();*/</script>
+#+REVEAL_EXTRA_JS: { src: 'processingutils.js' }, { src: 'processing-animation-initialisations.js'}
+* Garbage Collection in the HotSpot JVM 1.8
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="6666"
+  :END:
+  #+ATTR_REVEAL: :frag appear
+  HotSpot Java Virtual Machine (JVM) only
+  #+ATTR_REVEAL: :frag appear
+  Focus on version 1.8
+* Motivation & Goal
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="6666"
+  :END:
+  #+ATTR_REVEAL: :frag appear
+  Manage object life-cycle automatically
+  #+ATTR_REVEAL: :frag appear
+  Free as much memory as fast as possible
+** Main Job
+   :PROPERTIES:
+   :reveal_extra_attr: data-autoslide="5000"
+   :reveal_data_state: mainjob
+   :END:
+   #+REVEAL_HTML: <canvas id="mainjob-canvas"></canvas>
+   #+ATTR_REVEAL: :frag appear
+   Scan for unused objects
+   #+ATTR_REVEAL: :frag appear
+   Remove them from memory
+   #+ATTR_REVEAL: :frag appear
+   Compact the memory in use
+* Preliminary Concepts
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="5000"
+  :END:
+  #+ATTR_REVEAL: :frag appear
+  =Heap= is the part of the memory processed by the garbage collector
+  #+ATTR_REVEAL: :frag appear
+  =Stop-the-world pauses= freeze the application from a user's perspective
+  #+ATTR_REVEAL: :frag appear
+  Many objects are short-lived (eg. created in a loop)
+** Client and Server class
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="4000"
+  :END:
+   #+ATTR_REVEAL: :frag appear
+   JVM automatically classifies machine as =client= or =server=
+   #+ATTR_REVEAL: :frag appear
+   May be overridden with command line flags
+   #+ATTR_REVEAL: :frag appear
+   32-Bit JVM with single core or on Windows leads to =client=
+   #+ATTR_REVEAL: :frag appear
+   Everything else, esp. all 64-Bit JVMs, lead to =server=   
+** Generational Heap
+   :PROPERTIES:
+   :reveal_data_state: generational
+   :reveal_extra_attr: data-autoslide="3333"
+   :END:
+   #+REVEAL_HTML: <canvas id="generational-canvas"></canvas>
+   #+ATTR_REVEAL: :frag appear
+   All garbage collectors split the heap into generations
+   #+ATTR_REVEAL: :frag appear
+   Old generation and young, further divided
+   #+ATTR_REVEAL: :frag appear
+   Eden space where new objects are created
+   #+ATTR_REVEAL: :frag appear
+   And two survivor spaces used alternating
+   #+ATTR_REVEAL: :frag appear
+   Objects are basically promoted from one generation to next 
+** Generational Heap - Benefits
+   :PROPERTIES:
+   :reveal_extra_attr: data-autoslide="4000"
+   :END:
+   #+ATTR_REVEAL: :frag appear
+   Allows different algorithms for young and old generation
+   #+ATTR_REVEAL: :frag appear
+   Faster to scan young generation
+   #+ATTR_REVEAL: :frag appear
+   Shorter stop-the-world pauses
+* Algorithms
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="4000"
+  :END:
+  #+ATTR_REVEAL: :frag appear
+  Serial Garbage Collector - Single-threaded
+  #+ATTR_REVEAL: :frag appear
+  Throughput Collector - Multi-threaded
+  #+ATTR_REVEAL: :frag appear
+  Concurrent Mark and Sweep (CMS) Collector - Minimizes pauses
+  #+ATTR_REVEAL: :frag appear
+  Garbage First (G1) Collector - Minimizes pauses with large heaps
+* Serial Garbage Collector
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="4000"
+  :END:
+  #+ATTR_REVEAL: :frag appear
+  Default for =client class= machines
+  #+ATTR_REVEAL: :frag appear
+  Single-threaded collection of new and old generation
+  #+ATTR_REVEAL: :frag appear
+  Stop-the-world pauses for both collections
+  #+ATTR_REVEAL: :frag appear
+  Compacts the old generation on collection
+* Througput Collector
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="3333"
+  :END:
+  #+ATTR_REVEAL: :frag appear
+  Default for =server class= machines
+  #+ATTR_REVEAL: :frag appear
+  Collects multi-threaded
+  #+REVEAL_HTML: <ul><li style="list-style-type: none;" class="fragment appear">Two operations:</li>
+  #+REVEAL_HTML: <li class="fragment appear">Minor collection</li>
+  #+REVEAL_HTML: <li class="fragment appear">Full collection</li>
+** Throughput - Minor Garbage Collection
+   :PROPERTIES:
+   :reveal_data_state: throughput-minor
+   :reveal_extra_attr: data-autoslide="3333"
+   :END:
+   #+REVEAL_HTML: <canvas id="throughput-minor-canvas"></canvas>
+   #+ATTR_REVEAL: :frag appear
+   Occurs when =eden space= occupancy exceeds threshold
+   #+ATTR_REVEAL: :frag appear
+   Promotes everything out of =eden space=
+   #+ATTR_REVEAL: :frag appear
+   Most of the objects are garbage and can be removed
+   #+ATTR_REVEAL: :frag appear
+   Some are promoted to the =survivor space=
+   #+ATTR_REVEAL: :frag appear
+   Other survivor space is cleared as well, some promotions to =old=
+** Throughput - Major Garbage Collection
+   :PROPERTIES:
+   :reveal_data_state: throughput-major
+   :reveal_extra_attr: data-autoslide="5000"
+   :END:
+   #+REVEAL_HTML: <canvas id="throughput-major-canvas"></canvas>
+   #+ATTR_REVEAL: :frag appear
+   Occurs when =old generation= occupancy exceeds threshold
+   #+ATTR_REVEAL: :frag appear
+   Cleans or promotes everything out of =young generation=
+   #+ATTR_REVEAL: :frag appear
+   Cleans everything out of =old generation= without active references
+* Concurrent Mark and Sweep Collector
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="3333"
+  :END:
+  #+ATTR_REVEAL: :frag appear
+  Tries to eliminate long pauses during full GC
+  #+REVEAL_HTML: <ul><li style="list-style-type: none;" class="fragment appear">Three operations:</li>
+  #+REVEAL_HTML: <li class="fragment appear">Young collection - similar to <code>Throughput</code></li>
+  #+REVEAL_HTML: <li class="fragment appear">Full collection - similar to <code>Throughput</code></li>
+  #+REVEAL_HTML: <li class="fragment appear">Concurrent cycle</li></ul>
+** CMS - Concurrent Cycle
+   :PROPERTIES:
+   :reveal_data_state: cms-concurrent
+   :reveal_extra_attr: data-autoslide="5000"
+   :END:
+   #+REVEAL_HTML: <canvas id="cms-concurrent-canvas"></canvas>
+   #+ATTR_REVEAL: :frag appear
+   JVM starts a concurrent cycle when heap sufficiently full
+   #+ATTR_REVEAL: :frag appear
+   Consists of multiple phases, two of them are =stop-the-world=
+   #+ATTR_REVEAL: :frag appear
+   =Old generation= is not compacted
+* Garbage First (G1) Collector
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="2222"
+  :END:
+  #+ATTR_REVEAL: :frag appear
+  Minimizes pauses for large heaps (>4GiB)
+  #+ATTR_REVEAL: :frag appear
+  Divides heap into regions but still generational
+  #+ATTR_REVEAL: :frag appear
+  Copying in old generation leads to less fragmentation
+  #+REVEAL_HTML: <ul><li style="list-style-type: none;" class="fragment appear">Four operations:</li>
+  #+REVEAL_HTML: <li class="fragment appear">Young collection</li>
+  #+REVEAL_HTML: <li class="fragment appear">Background, concurrent cycle</li>
+  #+REVEAL_HTML: <li class="fragment appear">Mixed collection</li>
+  #+REVEAL_HTML: <li class="fragment appear">Full collection</li></ul>
+** G1 - Young Collection
+  :PROPERTIES:
+  :reveal_data_state: g1-minor
+  :reveal_extra_attr: data-autoslide="5000"
+  :END:
+  #+REVEAL_HTML: <canvas id="g1-minor-canvas"></canvas>
+  #+ATTR_REVEAL: :frag appear
+  =G1 young collection= triggered when eden regions fill up
+  #+ATTR_REVEAL: :frag appear
+  After collection there are no regions assigned to =eden=
+  #+ATTR_REVEAL: :frag appear
+  and at least one region assigned to =survivor=
+** G1 - Background Marking Cycle
+  :PROPERTIES:
+  :reveal_data_state: g1-marking
+  :reveal_extra_attr: data-autoslide="4000"
+  :END:
+  #+REVEAL_HTML: <canvas id="g1-marking-canvas"></canvas>
+  #+ATTR_REVEAL: :frag appear
+  Several phases, some of them =stop-the-world=
+  #+ATTR_REVEAL: :frag appear
+  At least one young collection during marking cycle
+  #+ATTR_REVEAL: :frag appear
+  Marks old regions containing mostly garbage
+  #+ATTR_REVEAL: :frag appear
+  Old regions more occupied after marking due to young GC
+** G1 - Mixed Collection
+  :PROPERTIES:
+  :reveal_data_state: g1-mixed
+  :reveal_extra_attr: data-autoslide="5000"
+  :END:
+  #+REVEAL_HTML: <canvas id="g1-mixed-canvas"></canvas>
+  #+ATTR_REVEAL: :frag appear
+  Uses input of marking cycle
+  #+ATTR_REVEAL: :frag appear
+  Combine young collection with collection of marked regions
+  #+ATTR_REVEAL: :frag appear
+  Non-garbage of marked regions moved to other regions
+* Summary
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="6666"
+  :END:
+  #+ATTR_REVEAL: :frag appear
+  Throughput collector (and basically Serial too) maximize throughput
+  #+ATTR_REVEAL: :frag appear
+  Concurrent collectors (CMS & G1) minimize pauses
+* 
+  :PROPERTIES:
+  :reveal_extra_attr: data-autoslide="2000"
+  :reveal_background: ./media/would_you_like_to_know_more.jpg
+  :END:
+  #+ATTR_REVEAL: :frag appear
+  #+REVEAL_HTML: <img src="media/java_performance_the_definitive_guide_cover.jpeg" height="250px">
+  
