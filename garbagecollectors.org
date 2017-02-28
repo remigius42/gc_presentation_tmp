@@ -170,14 +170,12 @@
    =Old generation= is not compacted
 * Garbage First (G1) Collector
   :PROPERTIES:
-  :reveal_extra_attr: data-autoslide="2222"
+  :reveal_extra_attr: data-autoslide="2500"
   :END:
   #+ATTR_REVEAL: :frag appear
   Minimizes pauses for large heaps (>4GiB)
   #+ATTR_REVEAL: :frag appear
   Divides heap into regions but still generational
-  #+ATTR_REVEAL: :frag appear
-  Copying in old generation leads to less fragmentation
   #+REVEAL_HTML: <ul><li style="list-style-type: none;" class="fragment appear">Four operations:</li>
   #+REVEAL_HTML: <li class="fragment appear">Young collection</li>
   #+REVEAL_HTML: <li class="fragment appear">Background, concurrent cycle</li>
@@ -198,7 +196,7 @@
 ** G1 - Background Marking Cycle
   :PROPERTIES:
   :reveal_data_state: g1-marking
-  :reveal_extra_attr: data-autoslide="4000"
+  :reveal_extra_attr: data-autoslide="5000"
   :END:
   #+REVEAL_HTML: <canvas id="g1-marking-canvas"></canvas>
   #+ATTR_REVEAL: :frag appear
@@ -207,8 +205,6 @@
   At least one young collection during marking cycle
   #+ATTR_REVEAL: :frag appear
   Marks old regions containing mostly garbage
-  #+ATTR_REVEAL: :frag appear
-  Old regions more occupied after marking due to young GC
 ** G1 - Mixed Collection
   :PROPERTIES:
   :reveal_data_state: g1-mixed

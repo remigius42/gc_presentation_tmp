@@ -30,8 +30,8 @@
 <div class="reveal">
 <div class="slides">
 <section>
-<section id="slide-org90d9dbb" data-autoslide="6666">
-<h2 id="org90d9dbb">Garbage Collection in the HotSpot JVM 1.8</h2>
+<section id="slide-org6da91de" data-autoslide="6666">
+<h2 id="org6da91de">Garbage Collection in the HotSpot JVM 1.8</h2>
 <p class="fragment appear">
 HotSpot Java Virtual Machine (JVM) only
 </p>
@@ -41,8 +41,8 @@ Focus on version 1.8
 </section>
 </section>
 <section>
-<section id="slide-org8c3c132" data-autoslide="6666">
-<h2 id="org8c3c132">Motivation &amp; Goal</h2>
+<section id="slide-org49e2608" data-autoslide="6666">
+<h2 id="org49e2608">Motivation &amp; Goal</h2>
 <p class="fragment appear">
 Manage object life-cycle automatically
 </p>
@@ -50,8 +50,8 @@ Manage object life-cycle automatically
 Free as much memory as fast as possible
 </p>
 </section>
-<section id="slide-org866be67" data-state="mainjob" data-autoslide="5000">
-<h3 id="org866be67">Main Job</h3>
+<section id="slide-org3d9d76f" data-state="mainjob" data-autoslide="5000">
+<h3 id="org3d9d76f">Main Job</h3>
 <canvas id="mainjob-canvas"></canvas>
 <p class="fragment appear">
 Scan for unused objects
@@ -65,8 +65,8 @@ Compact the memory in use
 </section>
 </section>
 <section>
-<section id="slide-orgb7e9157" data-autoslide="5000">
-<h2 id="orgb7e9157">Preliminary Concepts</h2>
+<section id="slide-orga562339" data-autoslide="5000">
+<h2 id="orga562339">Preliminary Concepts</h2>
 <p class="fragment appear">
 <code>Heap</code> is the part of the memory processed by the garbage collector
 </p>
@@ -77,8 +77,8 @@ Compact the memory in use
 Many objects are short-lived (eg. created in a loop)
 </p>
 </section>
-<section id="slide-org25acc52" data-autoslide="4000">
-<h3 id="org25acc52">Client and Server class</h3>
+<section id="slide-org0954b19" data-autoslide="4000">
+<h3 id="org0954b19">Client and Server class</h3>
 <p class="fragment appear">
 JVM automatically classifies machine as <code>client</code> or <code>server</code>
 </p>
@@ -92,8 +92,8 @@ May be overridden with command line flags
 Everything else, esp. all 64-Bit JVMs, lead to <code>server</code>   
 </p>
 </section>
-<section id="slide-org523ff1a" data-state="generational" data-autoslide="3333">
-<h3 id="org523ff1a">Generational Heap</h3>
+<section id="slide-org2022b8c" data-state="generational" data-autoslide="3333">
+<h3 id="org2022b8c">Generational Heap</h3>
 <canvas id="generational-canvas"></canvas>
 <p class="fragment appear">
 All garbage collectors split the heap into generations
@@ -111,8 +111,8 @@ And two survivor spaces used alternating
 Objects are basically promoted from one generation to next 
 </p>
 </section>
-<section id="slide-org64a2ac7" data-autoslide="4000">
-<h3 id="org64a2ac7">Generational Heap - Benefits</h3>
+<section id="slide-org3acbb5a" data-autoslide="4000">
+<h3 id="org3acbb5a">Generational Heap - Benefits</h3>
 <p class="fragment appear">
 Allows different algorithms for young and old generation
 </p>
@@ -125,8 +125,8 @@ Shorter stop-the-world pauses
 </section>
 </section>
 <section>
-<section id="slide-org5c3bc78" data-autoslide="4000">
-<h2 id="org5c3bc78">Algorithms</h2>
+<section id="slide-org123e915" data-autoslide="4000">
+<h2 id="org123e915">Algorithms</h2>
 <p class="fragment appear">
 Serial Garbage Collector - Single-threaded
 </p>
@@ -142,8 +142,8 @@ Garbage First (G1) Collector - Minimizes pauses with large heaps
 </section>
 </section>
 <section>
-<section id="slide-org00ccec5" data-autoslide="4000">
-<h2 id="org00ccec5">Serial Garbage Collector</h2>
+<section id="slide-org01a43f2" data-autoslide="4000">
+<h2 id="org01a43f2">Serial Garbage Collector</h2>
 <p class="fragment appear">
 Default for <code>client class</code> machines
 </p>
@@ -159,8 +159,8 @@ Compacts the old generation on collection
 </section>
 </section>
 <section>
-<section id="slide-org6a53153" data-autoslide="3333">
-<h2 id="org6a53153">Througput Collector</h2>
+<section id="slide-org6f56c0a" data-autoslide="3333">
+<h2 id="org6f56c0a">Througput Collector</h2>
 <p class="fragment appear">
 Default for <code>server class</code> machines
 </p>
@@ -171,8 +171,8 @@ Collects multi-threaded
 <li class="fragment appear">Minor collection</li>
 <li class="fragment appear">Full collection</li>
 </section>
-<section id="slide-orga57acc8" data-state="throughput-minor" data-autoslide="3333">
-<h3 id="orga57acc8">Throughput - Minor Garbage Collection</h3>
+<section id="slide-orgcf078ff" data-state="throughput-minor" data-autoslide="3333">
+<h3 id="orgcf078ff">Throughput - Minor Garbage Collection</h3>
 <canvas id="throughput-minor-canvas"></canvas>
 <p class="fragment appear">
 Occurs when <code>eden space</code> occupancy exceeds threshold
@@ -190,8 +190,8 @@ Some are promoted to the <code>survivor space</code>
 Other survivor space is cleared as well, some promotions to <code>old</code>
 </p>
 </section>
-<section id="slide-orga450eda" data-state="throughput-major" data-autoslide="5000">
-<h3 id="orga450eda">Throughput - Major Garbage Collection</h3>
+<section id="slide-org6bb0ad6" data-state="throughput-major" data-autoslide="5000">
+<h3 id="org6bb0ad6">Throughput - Major Garbage Collection</h3>
 <canvas id="throughput-major-canvas"></canvas>
 <p class="fragment appear">
 Occurs when <code>old generation</code> occupancy exceeds threshold
@@ -205,8 +205,8 @@ Cleans everything out of <code>old generation</code> without active references
 </section>
 </section>
 <section>
-<section id="slide-org9b88632" data-autoslide="3333">
-<h2 id="org9b88632">Concurrent Mark and Sweep Collector</h2>
+<section id="slide-org92fc411" data-autoslide="3333">
+<h2 id="org92fc411">Concurrent Mark and Sweep Collector</h2>
 <p class="fragment appear">
 Tries to eliminate long pauses during full GC
 </p>
@@ -215,8 +215,8 @@ Tries to eliminate long pauses during full GC
 <li class="fragment appear">Full collection - similar to <code>Throughput</code></li>
 <li class="fragment appear">Concurrent cycle</li></ul>
 </section>
-<section id="slide-org187cd0f" data-state="cms-concurrent" data-autoslide="5000">
-<h3 id="org187cd0f">CMS - Concurrent Cycle</h3>
+<section id="slide-org9dda899" data-state="cms-concurrent" data-autoslide="5000">
+<h3 id="org9dda899">CMS - Concurrent Cycle</h3>
 <canvas id="cms-concurrent-canvas"></canvas>
 <p class="fragment appear">
 JVM starts a concurrent cycle when heap sufficiently full
@@ -230,16 +230,13 @@ Consists of multiple phases, two of them are <code>stop-the-world</code>
 </section>
 </section>
 <section>
-<section id="slide-org572bcac" data-autoslide="2222">
-<h2 id="org572bcac">Garbage First (G1) Collector</h2>
+<section id="slide-org836ab4d" data-autoslide="2500">
+<h2 id="org836ab4d">Garbage First (G1) Collector</h2>
 <p class="fragment appear">
 Minimizes pauses for large heaps (&gt;4GiB)
 </p>
 <p class="fragment appear">
 Divides heap into regions but still generational
-</p>
-<p class="fragment appear">
-Copying in old generation leads to less fragmentation
 </p>
 <ul><li style="list-style-type: none;" class="fragment appear">Four operations:</li>
 <li class="fragment appear">Young collection</li>
@@ -247,8 +244,8 @@ Copying in old generation leads to less fragmentation
 <li class="fragment appear">Mixed collection</li>
 <li class="fragment appear">Full collection</li></ul>
 </section>
-<section id="slide-org3ea3680" data-state="g1-minor" data-autoslide="5000">
-<h3 id="org3ea3680">G1 - Young Collection</h3>
+<section id="slide-org640d9a7" data-state="g1-minor" data-autoslide="5000">
+<h3 id="org640d9a7">G1 - Young Collection</h3>
 <canvas id="g1-minor-canvas"></canvas>
 <p class="fragment appear">
 <code>G1 young collection</code> triggered when eden regions fill up
@@ -260,8 +257,8 @@ After collection there are no regions assigned to <code>eden</code>
 and at least one region assigned to <code>survivor</code>
 </p>
 </section>
-<section id="slide-org2b18987" data-state="g1-marking" data-autoslide="4000">
-<h3 id="org2b18987">G1 - Background Marking Cycle</h3>
+<section id="slide-orgf3aebbe" data-state="g1-marking" data-autoslide="5000">
+<h3 id="orgf3aebbe">G1 - Background Marking Cycle</h3>
 <canvas id="g1-marking-canvas"></canvas>
 <p class="fragment appear">
 Several phases, some of them <code>stop-the-world</code>
@@ -272,12 +269,9 @@ At least one young collection during marking cycle
 <p class="fragment appear">
 Marks old regions containing mostly garbage
 </p>
-<p class="fragment appear">
-Old regions more occupied after marking due to young GC
-</p>
 </section>
-<section id="slide-org7fb0d7b" data-state="g1-mixed" data-autoslide="5000">
-<h3 id="org7fb0d7b">G1 - Mixed Collection</h3>
+<section id="slide-orgf1807ba" data-state="g1-mixed" data-autoslide="5000">
+<h3 id="orgf1807ba">G1 - Mixed Collection</h3>
 <canvas id="g1-mixed-canvas"></canvas>
 <p class="fragment appear">
 Uses input of marking cycle
@@ -291,8 +285,8 @@ Non-garbage of marked regions moved to other regions
 </section>
 </section>
 <section>
-<section id="slide-org1473205" data-autoslide="6666">
-<h2 id="org1473205">Summary</h2>
+<section id="slide-orgdbd7905" data-autoslide="6666">
+<h2 id="orgdbd7905">Summary</h2>
 <p class="fragment appear">
 Throughput collector (and basically Serial too) maximize throughput
 </p>
@@ -302,8 +296,8 @@ Concurrent collectors (CMS &amp; G1) minimize pauses
 </section>
 </section>
 <section>
-<section id="slide-org76e5170" data-background="./media/would_you_like_to_know_more.jpg" data-autoslide="2000">
-<h2 id="org76e5170"></h2>
+<section id="slide-org230178e" data-background="./media/would_you_like_to_know_more.jpg" data-autoslide="2000">
+<h2 id="org230178e"></h2>
 <img src="media/java_performance_the_definitive_guide_cover.jpeg" height="250px">
 </section>
 </section>
